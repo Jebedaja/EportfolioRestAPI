@@ -1,0 +1,6 @@
+@EportfolioRestAPI_HostAddress = http://localhost:5005
+
+GET {{EportfolioRestAPI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
