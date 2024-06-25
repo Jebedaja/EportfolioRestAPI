@@ -1,9 +1,11 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using EportfolioRestAPI.Entities;
+using EportfolioRestAPI.Data;
 using EportfolioRestAPI;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -12,14 +14,21 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 
 // Add DBContext to DI container using connection string from appsettings.json
-builder.Services.AddDbContext<PortolioDbContext>(options =>
+builder.Services.AddDbContext<PortfolioDbContext>(options =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
 });
 
 // Add ASP.NET Identity
-builder.Services.AddIdentity<IdentityUser, IdentityRole>()
-    .AddEntityFrameworkStores<PortolioDbContext>()
+builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
+{
+    options.Password.RequireDigit = false;
+    options.Password.RequiredLength = 6;
+    options.Password.RequireNonAlphanumeric = false;
+    options.Password.RequireUppercase = false;
+    options.Password.RequireLowercase = false;
+})
+    .AddEntityFrameworkStores<PortfolioDbContext>()
     .AddDefaultTokenProviders();
 
 // Add Authentication with JWT
@@ -29,31 +38,19 @@ builder.Services.AddAuthentication(options =>
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
 })
-.AddJwtBearer(options =>
-{
-    options.TokenValidationParameters = new TokenValidationParameters
+    .AddJwtBearer(options =>
     {
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
-        ValidIssuer = builder.Configuration["Jwt:Issuer"],
-        ValidAudience = builder.Configuration["Jwt:Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(key)
-    };
-});
-
-builder.Services.Configure<IdentityOptions>(options =>
-{
-    options.Password.RequireDigit = false;
-    options.Password.RequiredLength = 6;
-    options.Password.RequireNonAlphanumeric = false;
-    options.Password.RequireUppercase = false;
-    options.Password.RequireLowercase = false;
-});
-
-// Register PortofolioSeeder
-builder.Services.AddScoped<PortofolioSeeder>();
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(key)
+        };
+    });
 
 var app = builder.Build();
 
@@ -65,7 +62,7 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseStaticFiles(); // Dodaj tê liniê, aby serwowaæ pliki statyczne
+app.UseStaticFiles(); // Serwowanie plików statycznych
 
 app.UseRouting();
 
@@ -74,16 +71,7 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-SeedDatabase(app);
+// Przekierowanie wszystkich innych ¿¹dañ do index.html
+app.MapFallbackToFile("index.html");
 
 app.Run();
-
-void SeedDatabase(WebApplication app)
-{
-    using (var scope = app.Services.CreateScope())
-    {
-        var seeder = scope.ServiceProvider.GetRequiredService<PortofolioSeeder>();
-        seeder.Seed();
-    }
-}
-
