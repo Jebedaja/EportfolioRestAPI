@@ -25,3 +25,4 @@ namespace EportfolioRestAPI.Models
         public string Username { get; set; }
     }
 }
+

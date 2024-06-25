@@ -1,4 +1,15 @@
-﻿using System;
+﻿using EportfolioRestAPI.Data;
+using EportfolioRestAPI.Models;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -123,7 +134,7 @@ namespace EportfolioRestAPI.Controllers
         }
 
         [HttpPost("Portfolio")]
-        [AllowAnonymous]  // Changed to AllowAnonymous
+        [Authorize]
         public async Task<ActionResult<PortfolioModel>> PostPortfolio([FromBody] PortfolioModel portfolio)
         {
             portfolio.DateAdded = DateTime.Now;
@@ -138,7 +149,7 @@ namespace EportfolioRestAPI.Controllers
         }
 
         [HttpPut("Portfolio/{id}")]
-        [AllowAnonymous]  // Changed to AllowAnonymous
+        [Authorize]
         public async Task<IActionResult> PutPortfolio(int id, [FromBody] PortfolioModel portfolio)
         {
             if (id != portfolio.Id)
@@ -176,7 +187,7 @@ namespace EportfolioRestAPI.Controllers
         }
 
         [HttpDelete("Portfolio/{id}")]
-        [AllowAnonymous]  // Changed to AllowAnonymous
+        [Authorize]
         public async Task<IActionResult> DeletePortfolio(int id)
         {
             var portfolio = await _context.Portfolios.FindAsync(id);
