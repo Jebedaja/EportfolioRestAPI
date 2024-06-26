@@ -9,22 +9,6 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using EportfolioRestAPI.Models;
-using Microsoft.Extensions.Configuration;
-using EportfolioRestAPI.Data;
-using Microsoft.EntityFrameworkCore;
-using System.Text;
-using Microsoft.AspNetCore.Authorization;
-
 namespace EportfolioRestAPI.Controllers
 {
     [Route("api/[controller]")]
@@ -104,7 +88,7 @@ namespace EportfolioRestAPI.Controllers
                 issuer: _configuration["Jwt:Issuer"],
                 audience: _configuration["Jwt:Audience"],
                 claims: claims,
-                expires: DateTime.Now.AddMinutes(5),
+                expires: DateTime.Now.AddMinutes(30),
                 signingCredentials: creds);
 
             return new JwtSecurityTokenHandler().WriteToken(token);
@@ -113,14 +97,12 @@ namespace EportfolioRestAPI.Controllers
         // CRUD operations for PortfolioModel
 
         [HttpGet("Portfolio")]
-        [AllowAnonymous]
         public async Task<ActionResult<IEnumerable<PortfolioModel>>> GetPortfolios()
         {
             return await _context.Portfolios.ToListAsync();
         }
 
         [HttpGet("Portfolio/{id}")]
-        [AllowAnonymous]
         public async Task<ActionResult<PortfolioModel>> GetPortfolio(int id)
         {
             var portfolio = await _context.Portfolios.FindAsync(id);
@@ -134,13 +116,9 @@ namespace EportfolioRestAPI.Controllers
         }
 
         [HttpPost("Portfolio")]
-        [Authorize]
         public async Task<ActionResult<PortfolioModel>> PostPortfolio([FromBody] PortfolioModel portfolio)
         {
             portfolio.DateAdded = DateTime.Now;
-
-            var user = await _userManager.GetUserAsync(User);
-            portfolio.Username = user.Email; // Ustawienie nazwy użytkownika na podstawie adresu e-mail
 
             _context.Portfolios.Add(portfolio);
             await _context.SaveChangesAsync();
@@ -149,7 +127,6 @@ namespace EportfolioRestAPI.Controllers
         }
 
         [HttpPut("Portfolio/{id}")]
-        [Authorize]
         public async Task<IActionResult> PutPortfolio(int id, [FromBody] PortfolioModel portfolio)
         {
             if (id != portfolio.Id)
@@ -158,6 +135,7 @@ namespace EportfolioRestAPI.Controllers
             }
 
             var existingPortfolio = await _context.Portfolios.FindAsync(id);
+
             if (existingPortfolio == null)
             {
                 return NotFound($"Portfolio with id {id} not found");
@@ -187,10 +165,10 @@ namespace EportfolioRestAPI.Controllers
         }
 
         [HttpDelete("Portfolio/{id}")]
-        [Authorize]
         public async Task<IActionResult> DeletePortfolio(int id)
         {
             var portfolio = await _context.Portfolios.FindAsync(id);
+
             if (portfolio == null)
             {
                 return NotFound();

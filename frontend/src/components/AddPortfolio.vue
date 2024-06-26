@@ -1,7 +1,7 @@
 <template>
-  <div class="edit-portfolio">
-    <h2>Edit Portfolio</h2>
-    <form @submit.prevent="updatePortfolio">
+  <div class="add-portfolio">
+    <h2>Add Portfolio</h2>
+    <form @submit.prevent="addPortfolio">
       <div class="form-group">
         <label for="portfolioName">Portfolio Name:</label>
         <input type="text" id="portfolioName" v-model="portfolio.portfolioName" required>
@@ -14,9 +14,7 @@
         <label for="youTubeLink">YouTube Link:</label>
         <input type="text" id="youTubeLink" v-model="portfolio.youTubeLink" required>
       </div>
-      <!-- Dodaj pole ukryte z id portfolio -->
-      <input type="hidden" id="portfolioId" v-model="portfolio.id">
-      <button type="submit">Update Portfolio</button>
+      <button type="submit">Add Portfolio</button>
       <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
     </form>
   </div>
@@ -27,43 +25,19 @@ export default {
   data() {
     return {
       portfolio: {
-        id: null,
         portfolioName: '',
         description: '',
         youTubeLink: '',
         dateAdded: new Date()  // Ustawienie daty na obecną
-
       },
       errorMessage: ''
     };
   },
-  async created() {
-    const id = this.$route.params.id;
-    await this.fetchPortfolio(id);
-  },
   methods: {
-    async fetchPortfolio(id) {
+    async addPortfolio() {
       try {
-        const response = await fetch(`/api/Account/Portfolio/${id}`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`
-          }
-        });
-        if (response.ok) {
-          this.portfolio = await response.json();
-        } else {
-          console.error(`Failed to fetch portfolio with id ${id}`);
-          this.errorMessage = `Failed to fetch portfolio with id ${id}`;
-        }
-      } catch (error) {
-        console.error(`Error fetching portfolio with id ${id}:`, error);
-        this.errorMessage = `Error fetching portfolio with id ${id}: ${error.message}`;
-      }
-    },
-    async updatePortfolio() {
-      try {
-        const response = await fetch(`/api/Account/Portfolio/${this.portfolio.id}`, {
-          method: 'PUT',
+        const response = await fetch('/api/Account/Portfolio', {
+          method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${localStorage.getItem('token')}`
@@ -71,14 +45,14 @@ export default {
           body: JSON.stringify(this.portfolio)
         });
         if (response.ok) {
-          this.$router.push({ name: 'portfolio' }); // Przekierowanie do widoku portfolio po edycji
+          this.$router.push({ name: 'portfolio' }); // Przekierowanie do widoku portfolio po dodaniu
         } else {
-          console.error(`Failed to update portfolio with id ${this.portfolio.id}`);
-          this.errorMessage = `Failed to update portfolio with id ${this.portfolio.id}`;
+          console.error('Failed to add portfolio');
+          this.errorMessage = 'Failed to add portfolio';
         }
       } catch (error) {
-        console.error(`Error updating portfolio with id ${this.portfolio.id}:`, error);
-        this.errorMessage = `Error updating portfolio with id ${this.portfolio.id}: ${error.message}`;
+        console.error('Error adding portfolio:', error);
+        this.errorMessage = `Error adding portfolio: ${error.message}`;
       }
     }
   }
@@ -86,7 +60,7 @@ export default {
 </script>
 
 <style scoped>
-.edit-portfolio {
+.add-portfolio {
   text-align: center;
   padding: 20px;
   background: white;

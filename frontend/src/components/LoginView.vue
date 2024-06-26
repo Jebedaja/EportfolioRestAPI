@@ -58,7 +58,7 @@ export default {
   justify-content: center;
   align-items: center;
   height: 100vh;
-  background-color: #e0e0e0; /* Jasno szare tło */
+  background-color: #e0e0e0;
 }
 
 .auth-box {

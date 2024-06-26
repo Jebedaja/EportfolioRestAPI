@@ -2,13 +2,9 @@
   <div class="portfolio-container">
     <div class="portfolio-box">
       <h2>Portfolio</h2>
-
-      <!-- Przycisk do dodawania nowego portfela -->
       <router-link :to="{ name: 'add-portfolio' }">
         <button class="add-button">Add New Portfolio</button>
       </router-link>
-
-      <!-- Wyświetlanie zawartości portfolio -->
       <div v-if="portfolios.length > 0">
         <div v-for="portfolio in portfolios" :key="portfolio.id" class="portfolio-item">
           <h3>{{ portfolio.portfolioName }}</h3>
@@ -21,8 +17,6 @@
       <div v-else>
         <p>No portfolio content available.</p>
       </div>
-
-      <!-- Wyświetlanie błędów -->
       <div v-if="error" class="error-message">
         <p>{{ error }}</p>
       </div>
@@ -44,7 +38,11 @@ export default {
   methods: {
     async fetchPortfolioContent() {
       try {
-        const response = await fetch('/api/Account/Portfolio');
+        const response = await fetch('/api/Account/Portfolio', {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`
+          }
+        });
         if (response.ok) {
           this.portfolios = await response.json();
         } else {
@@ -60,7 +58,10 @@ export default {
     async deletePortfolio(id) {
       try {
         const response = await fetch(`/api/Account/Portfolio/${id}`, {
-          method: 'DELETE'
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`
+          }
         });
         if (response.ok) {
           this.portfolios = this.portfolios.filter(p => p.id !== id);
@@ -84,7 +85,7 @@ export default {
   justify-content: center;
   align-items: center;
   height: 100vh;
-  background-color: #e0e0e0; /* Jasno szare tło */
+  background-color: #e0e0e0;
 }
 
 .portfolio-box {
