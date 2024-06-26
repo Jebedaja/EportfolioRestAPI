@@ -32,45 +32,50 @@ namespace EportfolioRestAPI.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> Register([FromBody] RegisterViewModel model)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
-                var user = new IdentityUser { UserName = model.Email, Email = model.Email };
-                var result = await _userManager.CreateAsync(user, model.Password);
-                if (result.Succeeded)
-                {
-                    return Ok(new { Result = "User registered successfully" });
-                }
-
-                foreach (var error in result.Errors)
-                {
-                    ModelState.AddModelError(string.Empty, error.Description);
-                }
-
-                return BadRequest(new { Error = "Registration failed", Details = result.Errors });
+                return BadRequest(new { Error = "Invalid model state", Details = ModelState });
             }
 
-            return BadRequest(new { Error = "Invalid model state", Details = ModelState });
+            var existingUser = await _userManager.FindByEmailAsync(model.Email);
+            if (existingUser != null)
+            {
+                return BadRequest(new { Error = "Email already in use" });
+            }
+
+            var user = new IdentityUser { UserName = model.Email, Email = model.Email };
+            var result = await _userManager.CreateAsync(user, model.Password);
+            if (result.Succeeded)
+            {
+                return Ok(new { Result = "User registered successfully" });
+            }
+
+            return BadRequest(new { Error = "Registration failed", Details = result.Errors });
         }
 
         [HttpPost("Login")]
         [AllowAnonymous]
         public async Task<IActionResult> Login([FromBody] LoginViewModel model)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
-                var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, lockoutOnFailure: false);
-                if (result.Succeeded)
-                {
-                    var user = await _userManager.FindByEmailAsync(model.Email);
-                    var token = GenerateJwtToken(user);
-
-                    return Ok(new { Token = token });
-                }
-
-                ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+                return BadRequest(new { Error = "Invalid model state", Details = ModelState });
             }
 
-            return BadRequest(new { Error = "Login failed", Details = ModelState });
+            var user = await _userManager.FindByEmailAsync(model.Email);
+            if (user == null)
+            {
+                return BadRequest(new { Error = "Invalid login attempt", Details = "User not found" });
+            }
+
+            var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, lockoutOnFailure: false);
+            if (result.Succeeded)
+            {
+                var token = GenerateJwtToken(user);
+                return Ok(new { Token = token });
+            }
+
+            return BadRequest(new { Error = "Invalid login attempt" });
         }
 
         private string GenerateJwtToken(IdentityUser user)
@@ -78,7 +83,8 @@ namespace EportfolioRestAPI.Controllers
             var claims = new[]
             {
                 new Claim(JwtRegisteredClaimNames.Sub, user.UserName),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new Claim(ClaimTypes.NameIdentifier, user.Id)
             };
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
@@ -88,7 +94,7 @@ namespace EportfolioRestAPI.Controllers
                 issuer: _configuration["Jwt:Issuer"],
                 audience: _configuration["Jwt:Audience"],
                 claims: claims,
-                expires: DateTime.Now.AddMinutes(30),
+                expires: DateTime.Now.AddMinutes(1),
                 signingCredentials: creds);
 
             return new JwtSecurityTokenHandler().WriteToken(token);
@@ -119,6 +125,22 @@ namespace EportfolioRestAPI.Controllers
         public async Task<ActionResult<PortfolioModel>> PostPortfolio([FromBody] PortfolioModel portfolio)
         {
             portfolio.DateAdded = DateTime.Now;
+
+            // Logowanie przychodzących danych
+            Console.WriteLine("Received portfolio data: ");
+            Console.WriteLine($"PortfolioName: {portfolio.PortfolioName}");
+            Console.WriteLine($"Description: {portfolio.Description}");
+            Console.WriteLine($"YouTubeLink: {portfolio.YouTubeLink}");
+         
+
+            if (string.IsNullOrEmpty(portfolio.PortfolioName) ||
+                string.IsNullOrEmpty(portfolio.Description) ||
+                string.IsNullOrEmpty(portfolio.YouTubeLink))
+                
+            {
+                Console.WriteLine("Validation failed: All fields are required.");
+                return BadRequest(new { Error = "All fields are required.", Data = portfolio });
+            }
 
             _context.Portfolios.Add(portfolio);
             await _context.SaveChangesAsync();

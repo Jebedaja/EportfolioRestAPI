@@ -4,15 +4,18 @@
     <form @submit.prevent="updatePortfolio">
       <div class="form-group">
         <label for="portfolioName">Portfolio Name:</label>
-        <input type="text" id="portfolioName" v-model="portfolio.portfolioName" required>
+        <input type="text" id="portfolioName" v-model="portfolio.portfolioName" @input="validatePortfolioName" required>
+        <div v-if="portfolioNameError" class="error-message">{{ portfolioNameError }}</div>
       </div>
       <div class="form-group">
         <label for="description">Description:</label>
-        <textarea id="description" v-model="portfolio.description" required></textarea>
+        <textarea id="description" v-model="portfolio.description" @input="validateDescription" required></textarea>
+        <div v-if="descriptionError" class="error-message">{{ descriptionError }}</div>
       </div>
       <div class="form-group">
         <label for="youTubeLink">YouTube Link:</label>
-        <input type="text" id="youTubeLink" v-model="portfolio.youTubeLink" required>
+        <input type="text" id="youTubeLink" v-model="portfolio.youTubeLink" @input="validateYouTubeLink" required>
+        <div v-if="youTubeLinkError" class="error-message">{{ youTubeLinkError }}</div>
       </div>
       <button type="submit">Update Portfolio</button>
       <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
@@ -21,6 +24,8 @@
 </template>
 
 <script>
+import axios from 'axios';
+
 export default {
   data() {
     return {
@@ -30,7 +35,10 @@ export default {
         description: '',
         youTubeLink: ''
       },
-      errorMessage: ''
+      errorMessage: '',
+      portfolioNameError: '',
+      descriptionError: '',
+      youTubeLinkError: ''
     };
   },
   async created() {
@@ -38,43 +46,59 @@ export default {
     await this.fetchPortfolio(id);
   },
   methods: {
+    validatePortfolioName() {
+      if (this.portfolio.portfolioName.length > 50) {
+        this.portfolioNameError = 'Portfolio Name must be 50 characters or less.';
+      } else {
+        this.portfolioNameError = '';
+      }
+    },
+    validateDescription() {
+      if (this.portfolio.description.length > 255) {
+        this.descriptionError = 'Description must be 255 characters or less.';
+      } else {
+        this.descriptionError = '';
+      }
+    },
+    validateYouTubeLink() {
+      if (this.portfolio.youTubeLink.length > 255) {
+        this.youTubeLinkError = 'YouTube Link must be 255 characters or less.';
+      } else {
+        this.youTubeLinkError = '';
+      }
+    },
     async fetchPortfolio(id) {
       try {
-        const response = await fetch(`/api/Account/Portfolio/${id}`, {
+        const response = await axios.get(`/api/Account/Portfolio/${id}`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('token')}`
           }
         });
-        if (response.ok) {
-          this.portfolio = await response.json();
-        } else {
-          console.error(`Failed to fetch portfolio with id ${id}`);
-          this.errorMessage = `Failed to fetch portfolio with id ${id}`;
-        }
+        this.portfolio = response.data;
       } catch (error) {
-        console.error(`Error fetching portfolio with id ${id}:`, error);
-        this.errorMessage = `Error fetching portfolio with id ${id}: ${error.message}`;
+        console.error(`Failed to fetch portfolio with id ${id}`, error);
+        this.errorMessage = `Failed to fetch portfolio with id ${id}: ${error.response ? error.response.data : error.message}`;
       }
     },
     async updatePortfolio() {
+      this.validatePortfolioName();
+      this.validateDescription();
+      this.validateYouTubeLink();
+
+      if (this.portfolioNameError || this.descriptionError || this.youTubeLinkError) {
+        return;
+      }
+
       try {
-        const response = await fetch(`/api/Account/Portfolio/${this.portfolio.id}`, {
-          method: 'PUT',
+        await axios.put(`/api/Account/Portfolio/${this.portfolio.id}`, this.portfolio, {
           headers: {
-            'Content-Type': 'application/json',
             Authorization: `Bearer ${localStorage.getItem('token')}`
-          },
-          body: JSON.stringify(this.portfolio)
+          }
         });
-        if (response.ok) {
-          this.$router.push({ name: 'portfolio' }); // Przekierowanie do widoku portfolio po edycji
-        } else {
-          console.error(`Failed to update portfolio with id ${this.portfolio.id}`);
-          this.errorMessage = `Failed to update portfolio with id ${this.portfolio.id}`;
-        }
+        this.$router.push({ name: 'portfolio' });
       } catch (error) {
-        console.error(`Error updating portfolio with id ${this.portfolio.id}:`, error);
-        this.errorMessage = `Error updating portfolio with id ${this.portfolio.id}: ${error.message}`;
+        console.error(`Failed to update portfolio with id ${this.portfolio.id}`, error);
+        this.errorMessage = `Failed to update portfolio with id ${this.portfolio.id}: ${error.response ? error.response.data : error.message}`;
       }
     }
   }

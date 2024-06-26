@@ -6,14 +6,17 @@
         <div class="form-group">
           <label>Email:</label>
           <input type="email" v-model="email" required>
+          <div v-if="emailError" class="error-message">{{ emailError }}</div>
         </div>
         <div class="form-group">
           <label>Password:</label>
           <input type="password" v-model="password" required>
+          <div v-if="passwordError" class="error-message">{{ passwordError }}</div>
         </div>
         <div class="form-group">
           <label>Confirm Password:</label>
           <input type="password" v-model="confirmPassword" required>
+          <div v-if="confirmPasswordError" class="error-message">{{ confirmPasswordError }}</div>
         </div>
         <button type="submit" class="submit-button">Register</button>
       </form>
@@ -29,13 +32,44 @@ export default {
     return {
       email: '',
       password: '',
-      confirmPassword: ''
+      confirmPassword: '',
+      emailError: '',
+      passwordError: '',
+      confirmPasswordError: ''
     };
   },
   methods: {
+    validateEmail() {
+      const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+      return emailPattern.test(this.email);
+    },
+    validatePassword() {
+      const minLength = 6;
+      const hasDigit = /\d/;
+      const hasUppercase = /[A-Z]/;
+      const hasLowercase = /[a-z]/;
+      
+      return this.password.length >= minLength &&
+             hasDigit.test(this.password) &&
+             hasUppercase.test(this.password) &&
+             hasLowercase.test(this.password);
+    },
     async register() {
+      this.emailError = '';
+      this.passwordError = '';
+      this.confirmPasswordError = '';
+
+      if (!this.validateEmail()) {
+        this.emailError = 'Invalid email address.';
+      }
+      if (!this.validatePassword()) {
+        this.passwordError = 'Password must be at least 6 characters long, contain at least one digit, one uppercase letter, and one lowercase letter.';
+      }
       if (this.password !== this.confirmPassword) {
-        console.error('Passwords do not match');
+        this.confirmPasswordError = 'Passwords do not match.';
+      }
+
+      if (this.emailError || this.passwordError || this.confirmPasswordError) {
         return;
       }
 
@@ -103,4 +137,10 @@ input[type="password"] {
 .submit-button:hover {
   background-color: #3b3c3c;
 }
+
+.error-message {
+  color: red;
+  margin-top: 5px;
+}
 </style>
+

@@ -7,6 +7,6 @@
         public string Description { get; set; }
         public string YouTubeLink { get; set; }
         public DateTime DateAdded { get; set; }
-        public string UserId { get; set; }  // Dodanie właściwości UserId
+       
     }
 }

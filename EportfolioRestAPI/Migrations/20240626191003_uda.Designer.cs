@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EportfolioRestAPI.Migrations
 {
     [DbContext(typeof(PortfolioDbContext))]
-    [Migration("20240626114011_id user")]
-    partial class iduser
+    [Migration("20240626191003_uda")]
+    partial class uda
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -45,10 +45,6 @@ namespace EportfolioRestAPI.Migrations
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("YouTubeLink")
                         .IsRequired()

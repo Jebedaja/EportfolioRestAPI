@@ -6,10 +6,12 @@
         <div class="form-group">
           <label>Email:</label>
           <input type="email" v-model="email" required>
+          <div v-if="emailError" class="error-message">{{ emailError }}</div>
         </div>
         <div class="form-group">
           <label>Password:</label>
           <input type="password" v-model="password" required>
+          <div v-if="passwordError" class="error-message">{{ passwordError }}</div>
         </div>
         <div class="form-group checkbox">
           <label>
@@ -17,6 +19,7 @@
           </label>
         </div>
         <button type="submit" class="submit-button">Login</button>
+        <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
       </form>
     </div>
   </div>
@@ -30,22 +33,38 @@ export default {
     return {
       email: '',
       password: '',
-      rememberMe: false
+      rememberMe: false,
+      errorMessage: '',
+      emailError: '',
+      passwordError: ''
     };
   },
   methods: {
     async login() {
+      this.errorMessage = '';
+      this.emailError = '';
+      this.passwordError = '';
+
+      if (!this.email || !this.password) {
+        this.errorMessage = 'Please fill in all fields.';
+        return;
+      }
+
       try {
         const response = await axios.post('/api/Account/Login', {
           email: this.email,
           password: this.password,
           rememberMe: this.rememberMe
         });
-        // Handle the token received from the server
         localStorage.setItem('token', response.data.token);
         this.$router.push({ name: 'portfolio' });
       } catch (error) {
-        console.error('Login failed', error);
+        console.error('Login failed', error.response ? error.response.data : error.message);
+        if (error.response && error.response.status === 400) {
+          this.errorMessage = 'Invalid login attempt. Please check your email and password.';
+        } else {
+          this.errorMessage = 'An error occurred. Please try again later.';
+        }
       }
     }
   }
@@ -105,5 +124,10 @@ input[type="password"] {
 
 .submit-button:hover {
   background-color: #3b3c3c;
+}
+
+.error-message {
+  color: red;
+  margin-top: 10px;
 }
 </style>

@@ -43,10 +43,6 @@ namespace EportfolioRestAPI.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("YouTubeLink")
                         .IsRequired()
                         .HasMaxLength(255)

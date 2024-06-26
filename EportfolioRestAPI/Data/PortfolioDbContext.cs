@@ -33,9 +33,7 @@ namespace EportfolioRestAPI.Data
                 .IsRequired()
                 .HasMaxLength(255);
 
-            modelBuilder.Entity<PortfolioModel>()
-                .Property(p => p.UserId)
-                .IsRequired();
+            
         }
     }
 }
