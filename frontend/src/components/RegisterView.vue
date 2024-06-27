@@ -29,6 +29,8 @@
         </div>
         <!-- Przycisk przesyłania formularza -->
         <button type="submit" class="submit-button">Register</button>
+        <!-- Komunikat o błędzie ogólnym -->
+        <div v-if="generalError" class="error-message">{{ generalError }}</div>
       </form>
     </div>
   </div>
@@ -48,7 +50,8 @@ export default {
       // Zmienne do przechowywania komunikatów o błędach
       emailError: '',
       passwordError: '',
-      confirmPasswordError: ''
+      confirmPasswordError: '',
+      generalError: '' // Zmienna do przechowywania ogólnych komunikatów o błędach
     };
   },
   methods: {
@@ -78,6 +81,7 @@ export default {
       this.emailError = '';
       this.passwordError = '';
       this.confirmPasswordError = '';
+      this.generalError = '';
 
       // Walidacja emaila
       if (!this.validateEmail()) {
@@ -110,6 +114,15 @@ export default {
       } catch (error) {
         // Obsługa błędów rejestracji
         console.error('Registration failed:', error.response ? error.response.data : error.message);
+        if (error.response && error.response.data && error.response.data.Error) {
+          if (error.response.data.Error === "Email already in use") {
+            this.emailError = 'Email already in use. Please choose another one.';
+          } else {
+            this.generalError = error.response.data.Error;
+          }
+        } else {
+          this.generalError = 'Registration failed. Please try again later.';
+        }
       }
     }
   }
@@ -178,3 +191,4 @@ input[type="password"] {
   margin-top: 5px; /* Dodaje górny margines */
 }
 </style>
+
